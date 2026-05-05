@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Megaphone, X } from "lucide-react";
+import { loadSiteSettings, SETTINGS_UPDATED_EVENT } from "@/lib/site-settings";
 
 export function AnnouncementBar() {
   const [text, setText] = useState("");
   const [closed, setClosed] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("site_settings").select("value").eq("key", "announcement").maybeSingle();
-      const v = data?.value;
-      if (typeof v === "string" && v.trim()) setText(v.trim());
-    })();
+    const load = async () => {
+      const settings = await loadSiteSettings();
+      setText(settings.announcement?.trim() || "");
+      setClosed(false);
+    };
+    load();
+    window.addEventListener(SETTINGS_UPDATED_EVENT, load);
     try { if (sessionStorage.getItem("bmc_ann_closed")) setClosed(true); } catch {}
+    return () => window.removeEventListener(SETTINGS_UPDATED_EVENT, load);
   }, []);
 
   if (!text || closed) return null;

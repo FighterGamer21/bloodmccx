@@ -168,3 +168,46 @@
   .border-blood { border-color: var(--primary); }
   .glow-blood { box-shadow: 0 0 30px oklch(0.55 0.22 27 / 0.4); }
 }
+
+.bmc-loader {
+  display: grid;
+  grid-template-columns: repeat(3, 2.25rem);
+  gap: 0.45rem;
+  color: var(--primary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  filter: drop-shadow(0 0 14px oklch(0.55 0.22 27 / 0.55));
+}
+
+.bmc-loader span {
+  display: grid;
+  height: 2.25rem;
+  place-items: center;
+  border: 1px solid oklch(0.55 0.22 27 / 0.28);
+  background: oklch(0.18 0.025 25 / 0.72);
+  animation: bmc-loader-pulse 1.15s ease-in-out infinite;
+}
+
+.bmc-loader span:nth-child(2),
+.bmc-loader span:nth-child(4),
+.bmc-loader span:nth-child(6),
+.bmc-loader span:nth-child(8) {
+  animation-delay: 0.16s;
+}
+
+.bmc-loader span:nth-child(5) {
+  animation-delay: 0.32s;
+}
+
+@keyframes bmc-loader-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

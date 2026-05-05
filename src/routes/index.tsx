@@ -8,17 +8,17 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Copy, MessageSquare, Youtube, Sword, Shield, Zap, Crown, Tag as TagIcon, ChevronRight, Check } from "lucide-react";
 import { useState } from "react";
+import { useSiteSettings } from "@/lib/site-settings";
+import { LoadingScreen } from "@/components/site/LoadingScreen";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const SERVER_IP = "play.bloodmc.net";
-const DISCORD = "https://discord.gg/kUZjRQsxtm";
-
 function Index() {
   const [copied, setCopied] = useState(false);
-  const { data: products = [] } = useQuery({
+  const { settings, loading: settingsLoading } = useSiteSettings();
+  const { data: products = [], isLoading: productsLoading } = useQuery({
     queryKey: ["products-home"],
     queryFn: async () => {
       const { data } = await supabase.from("products").select("*").eq("enabled", true).order("sort_order");
@@ -32,7 +32,7 @@ function Index() {
 
   const copyIp = async () => {
     try {
-      await navigator.clipboard.writeText(SERVER_IP);
+      await navigator.clipboard.writeText(settings.server_ip);
       setCopied(true);
       toast.success("Server IP copied!");
       setTimeout(() => setCopied(false), 2000);
@@ -41,28 +41,34 @@ function Index() {
     }
   };
 
+  if (settingsLoading || productsLoading) return <LoadingScreen />;
+
   return (
     <SiteLayout>
       {/* Hero */}
       <section className="relative overflow-hidden bg-hero">
+        {settings.hero_image_url && (
+          <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url(${settings.hero_image_url})` }} />
+        )}
+        {settings.hero_image_url && <div className="absolute inset-0 bg-gradient-to-b from-background/75 via-background/60 to-background" />}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22><path d=%22M0 0h60v60H0z%22 fill=%22none%22/><path d=%22M30 0v60M0 30h60%22 stroke=%22%23dc2626%22 stroke-opacity=%220.05%22/></svg>')] opacity-50" />
         <div className="container relative mx-auto px-4 py-20 md:py-32 text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-blood">
             <span className="h-2 w-2 rounded-full bg-blood animate-pulse" /> Network Online
           </span>
           <h1 className="mt-6 text-5xl md:text-7xl font-extrabold tracking-tight">
-            Dominate the <span className="text-blood">BloodMC</span> Network
+            Dominate the <span className="text-blood">{settings.site_name}</span> Network
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Premium ranks, exclusive tags & elite BedWars perks. Join thousands of players already ruling the server.
+            {settings.tagline}
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <button onClick={copyIp} className="group inline-flex items-center gap-3 rounded-lg border border-primary/40 bg-card/60 px-5 py-3 font-mono text-sm md:text-base shadow-blood backdrop-blur transition-all hover:bg-card">
-              <span className="text-blood">{SERVER_IP}</span>
+              <span className="text-blood">{settings.server_ip}</span>
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />}
             </button>
-            <a href={DISCORD} target="_blank" rel="noreferrer">
+            <a href={settings.discord_url} target="_blank" rel="noreferrer">
               <Button size="lg" variant="outline">
                 <MessageSquare className="mr-2 h-4 w-4" /> Join Discord
               </Button>
@@ -154,7 +160,7 @@ function Index() {
           {[
             { n: "01", t: "Pick a product", d: "Choose any rank or tag." },
             { n: "02", t: "Add to cart", d: "Enter your Minecraft username." },
-            { n: "03", t: "Pay via UPI", d: "Pay shadowroni@ybl with order ID." },
+            { n: "03", t: "Pay via UPI", d: `Pay ${settings.upi_id} with order ID.` },
             { n: "04", t: "Open ticket", d: "Verify in our Discord ticket." },
           ].map((s) => (
             <div key={s.n} className="relative rounded-xl border border-border/70 bg-card p-6">
@@ -173,10 +179,10 @@ function Index() {
             <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground">Ready to dominate?</h2>
             <p className="mt-2 text-primary-foreground/90">Join the BloodMC community on Discord & start your rise today.</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <a href={DISCORD} target="_blank" rel="noreferrer">
+              <a href={settings.discord_url} target="_blank" rel="noreferrer">
                 <Button size="lg" variant="secondary"><MessageSquare className="mr-2 h-4 w-4" /> Discord</Button>
               </a>
-              <a href="https://www.youtube.com/@ShadowRoni" target="_blank" rel="noreferrer">
+              <a href={settings.youtube_url} target="_blank" rel="noreferrer">
                 <Button size="lg" variant="secondary"><Youtube className="mr-2 h-4 w-4" /> YouTube</Button>
               </a>
             </div>

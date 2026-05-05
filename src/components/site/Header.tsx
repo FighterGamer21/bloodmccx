@@ -1,10 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ShoppingCart, Menu, X, Skull, User as UserIcon, LogOut, Wallet, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/lib/site-settings";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,
@@ -24,18 +24,9 @@ export function Header() {
   const { user, profile, isAdmin, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const [logo, setLogo] = useState<string>("");
-  const [siteName, setSiteName] = useState<string>("BLOODMC");
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("site_settings").select("*").in("key", ["site_logo_url", "site_name"]);
-      (data ?? []).forEach((r: any) => {
-        if (r.key === "site_logo_url" && typeof r.value === "string") setLogo(r.value);
-        if (r.key === "site_name" && typeof r.value === "string" && r.value.trim()) setSiteName(r.value.toUpperCase());
-      });
-    })();
-  }, []);
+  const { settings } = useSiteSettings();
+  const logo = settings.site_logo_url;
+  const siteName = (settings.site_name || "BLOODMC").toUpperCase();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">

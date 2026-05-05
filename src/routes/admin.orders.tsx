@@ -11,7 +11,7 @@ export const Route = createFileRoute("/admin/orders")({
   component: OrdersAdmin,
 });
 
-const STATUSES = ["pending", "verifying", "completed", "rejected", "refunded"];
+const STATUSES = ["pending", "paid", "verified", "delivered", "cancelled", "refunded"];
 
 function OrdersAdmin() {
   const [orders, setOrders] = useState<any[]>([]);

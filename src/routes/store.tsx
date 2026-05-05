@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCart } from "@/lib/cart";
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
+import { LoadingScreen } from "@/components/site/LoadingScreen";
 
 export const Route = createFileRoute("/store")({
   head: () => ({ meta: [{ title: "Store — BloodMC" }, { name: "description", content: "Browse all BloodMC ranks and tags." }] }),
@@ -22,7 +23,7 @@ function StorePage() {
   const [cat, setCat] = useState<string>("all");
   const [sort, setSort] = useState("popular");
 
-  const { data: products = [] } = useQuery({
+  const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data } = await supabase.from("products").select("*").eq("enabled", true).order("sort_order");
@@ -45,6 +46,8 @@ function StorePage() {
     else if (sort === "name") list.sort((a: any, b: any) => a.name.localeCompare(b.name));
     return list;
   }, [products, q, cat, sort]);
+
+  if (isLoading) return <LoadingScreen label="Loading store" />;
 
   return (
     <SiteLayout>

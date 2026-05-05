@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { ProductCard } from "@/components/site/ProductCard";
+import { LoadingScreen } from "@/components/site/LoadingScreen";
 
 export const Route = createFileRoute("/tags")({
   head: () => ({ meta: [{ title: "Tags — BloodMC" }] }),
@@ -11,10 +12,11 @@ export const Route = createFileRoute("/tags")({
 });
 
 function TagsPage() {
-  const { data = [] } = useQuery({
+  const { data = [], isLoading } = useQuery({
     queryKey: ["tags"],
     queryFn: async () => (await supabase.from("products").select("*").eq("category", "tag").eq("enabled", true).order("sort_order")).data || [],
   });
+  if (isLoading) return <LoadingScreen label="Loading tags" />;
   return (
     <SiteLayout>
       <PageHeader eyebrow="Tags" title="Exclusive Chat Tags" subtitle="Stand out in every conversation." />

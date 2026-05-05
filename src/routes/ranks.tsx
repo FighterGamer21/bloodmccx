@@ -4,17 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { PageHeader } from "@/components/site/PageHeader";
 import { ProductCard } from "@/components/site/ProductCard";
+import { LoadingScreen } from "@/components/site/LoadingScreen";
 
 export const Route = createFileRoute("/ranks")({
   head: () => ({ meta: [{ title: "Ranks — BloodMC" }, { name: "description", content: "All BloodMC premium ranks." }] }),
   component: () => {
-    const { data = [] } = useQuery({
+    const { data = [], isLoading } = useQuery({
       queryKey: ["ranks"],
       queryFn: async () => {
         const { data } = await supabase.from("products").select("*").eq("category", "rank").eq("enabled", true).order("sort_order");
         return data || [];
       },
     });
+    if (isLoading) return <LoadingScreen label="Loading ranks" />;
     return (
       <SiteLayout>
         <PageHeader eyebrow="Ranks" title="Premium Ranks" subtitle="Six tiers of perks built for BedWars dominance." />

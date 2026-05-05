@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Skull, Wrench } from "lucide-react";
+import { loadSiteSettings, SETTINGS_UPDATED_EVENT } from "@/lib/site-settings";
+import { LoadingScreen } from "./LoadingScreen";
 
 export function MaintenanceGate({ children }: { children: ReactNode }) {
   const { isAdmin } = useAuth();
@@ -11,18 +12,29 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    let alive = true;
     (async () => {
-      const { data } = await supabase.from("site_settings").select("*").in("key", ["maintenance_mode", "maintenance_message", "site_name"]);
-      const map: Record<string, any> = {};
-      (data ?? []).forEach((s: any) => (map[s.key] = s.value));
-      setMaintenance(map.maintenance_mode === true || map.maintenance_mode === "true");
-      if (map.maintenance_message) setMsg(String(map.maintenance_message));
-      if (map.site_name) setSiteName(String(map.site_name));
+      const settings = await loadSiteSettings();
+      if (!alive) return;
+      setMaintenance(settings.maintenance_mode === true || settings.maintenance_mode === "true");
+      setMsg(settings.maintenance_message);
+      setSiteName(settings.site_name);
       setLoaded(true);
     })();
+    const reload = async () => {
+      const settings = await loadSiteSettings();
+      setMaintenance(settings.maintenance_mode === true || settings.maintenance_mode === "true");
+      setMsg(settings.maintenance_message);
+      setSiteName(settings.site_name);
+    };
+    window.addEventListener(SETTINGS_UPDATED_EVENT, reload);
+    return () => {
+      alive = false;
+      window.removeEventListener(SETTINGS_UPDATED_EVENT, reload);
+    };
   }, []);
 
-  if (!loaded) return null;
+  if (!loaded) return <LoadingScreen />;
   if (maintenance && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">

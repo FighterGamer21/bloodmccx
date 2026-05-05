@@ -1,11 +1,12 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Skull, LayoutDashboard, ShoppingBag, Package, Settings, LogOut, HelpCircle, FileText, Tag, Users } from "lucide-react";
+import { LoadingScreen } from "@/components/site/LoadingScreen";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -30,7 +31,7 @@ function AdminLayout() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading admin...</div>;
+  if (loading) return <LoadingScreen label="Loading admin" />;
   if (!authed) return <AuthScreen />;
   if (!isAdmin) return <div className="min-h-screen flex flex-col items-center justify-center gap-3"><h1 className="text-2xl font-bold">Access denied</h1><p className="text-muted-foreground">You're signed in but not an admin.</p><Button onClick={() => supabase.auth.signOut()}>Sign out</Button></div>;
   return <AdminShell />;
@@ -42,7 +43,8 @@ function AuthScreen() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const submit = async () => {
+  const submit = async (event?: FormEvent) => {
+    event?.preventDefault();
     setBusy(true);
     if (mode === "signin") {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -62,14 +64,14 @@ function AuthScreen() {
           <span className="text-xl font-bold tracking-wider">BLOOD<span className="text-blood">MC</span> Admin</span>
         </div>
         <p className="mt-2 text-center text-sm text-muted-foreground">{mode === "signin" ? "Sign in to manage the store" : "Create the first admin account"}</p>
-        <div className="mt-6 space-y-3">
+        <form onSubmit={submit} className="mt-6 space-y-3">
           <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div><Label>Password</Label><Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
-          <Button className="w-full bg-blood shadow-blood" onClick={submit} disabled={busy}>{busy ? "..." : (mode === "signin" ? "Sign In" : "Create Account")}</Button>
-          <button className="w-full text-xs text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
+          <Button type="submit" className="w-full bg-blood shadow-blood" disabled={busy}>{busy ? "..." : (mode === "signin" ? "Sign In" : "Create Account")}</Button>
+          <button type="button" className="w-full text-xs text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>
             {mode === "signin" ? "First time? Create the admin account" : "Already have an account? Sign in"}
           </button>
-        </div>
+        </form>
         <p className="mt-4 text-center text-[11px] text-muted-foreground">The first user to sign up becomes admin automatically.</p>
       </div>
     </div>

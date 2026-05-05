@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Skull } from "lucide-react";
 
@@ -23,7 +23,7 @@ function LoginPage() {
 
   useEffect(() => { if (user) nav({ to: "/profile" }); }, [user, nav]);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     const res = mode === "signin" ? await signIn(mc, password) : await signUp(mc, password);
