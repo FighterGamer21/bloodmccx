@@ -17,14 +17,21 @@ export const Route = createFileRoute("/admin/products")({
 
 const empty: any = {
   id: "",
-  name: "", slug: "", category: "rank",
-  short_description: "", description: "",
-  price_inr: 0, price_usd: 0,
+  name: "",
+  slug: "",
+  category: "rank",
+  short_description: "",
+  description: "",
+  price_inr: 0,
+  price_usd: 0,
   discount_percent: 0,
+  billing_type: "monthly",
   perks: [] as string[],
   color: "#dc2626",
   image_url: "",
-  enabled: true, featured: false, popular: false,
+  enabled: true,
+  featured: false,
+  popular: false,
   sort_order: 0,
   is_topup: false,
   topup_amount: 0,
@@ -41,8 +48,19 @@ function ProductsAdmin() {
   };
   useEffect(() => { load(); }, []);
 
-  const openNew = () => { setEditing({ ...empty }); setOpen(true); };
-  const openEdit = (p: any) => { setEditing({ ...p, perks: Array.isArray(p.perks) ? p.perks : [] }); setOpen(true); };
+  const openNew = () => {
+    setEditing({ ...empty });
+    setOpen(true);
+  };
+
+  const openEdit = (p: any) => {
+    setEditing({
+      ...p,
+      billing_type: p.billing_type || "monthly",
+      perks: Array.isArray(p.perks) ? p.perks : [],
+    });
+    setOpen(true);
+  };
 
   const save = async () => {
     if (!editing.name || !editing.slug) return toast.error("Name & slug required");
@@ -52,6 +70,7 @@ function ProductsAdmin() {
       price_inr: Number(rest.price_inr) || 0,
       price_usd: Number(rest.price_usd) || 0,
       discount_percent: Number(rest.discount_percent) || 0,
+      billing_type: rest.is_topup ? "lifetime" : (rest.billing_type === "lifetime" ? "lifetime" : "monthly"),
       sort_order: Number(rest.sort_order) || 0,
       topup_amount: Number(rest.topup_amount) || 0,
     };
@@ -90,10 +109,11 @@ function ProductsAdmin() {
               <div>
                 <p className="font-semibold">{p.name} <span className="text-xs text-muted-foreground">/{p.slug}</span></p>
                 <p className="text-xs text-muted-foreground uppercase">
-                  {p.category} · ₹{p.price_inr} · ${p.price_usd}
+                  {p.category} - INR {p.price_inr} - ${p.price_usd}
                   {p.discount_percent > 0 && <span className="text-blood ml-2">-{p.discount_percent}%</span>}
-                  {!p.enabled && " · hidden"}
-                  {p.is_topup && " · TOPUP"}
+                  <span className="ml-2">{p.billing_type === "lifetime" ? "- lifetime" : "- monthly"}</span>
+                  {!p.enabled && " - hidden"}
+                  {p.is_topup && " - topup"}
                 </p>
               </div>
             </div>
@@ -134,6 +154,28 @@ function ProductsAdmin() {
                 <div><Label>Price USD</Label><Input type="number" step="0.01" value={editing.price_usd} onChange={(e) => setEditing({ ...editing, price_usd: e.target.value })} /></div>
                 <div><Label>Discount %</Label><Input type="number" min="0" max="90" value={editing.discount_percent || 0} onChange={(e) => setEditing({ ...editing, discount_percent: e.target.value })} /></div>
               </div>
+              {!editing.is_topup && (
+                <div>
+                  <Label>Plan Type</Label>
+                  <div className="mt-2 grid grid-cols-2 overflow-hidden rounded-md border border-border">
+                    <button
+                      type="button"
+                      onClick={() => setEditing({ ...editing, billing_type: "monthly" })}
+                      className={`px-3 py-2 text-sm font-semibold transition ${editing.billing_type !== "lifetime" ? "bg-blood text-primary-foreground shadow-blood" : "bg-card text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditing({ ...editing, billing_type: "lifetime" })}
+                      className={`px-3 py-2 text-sm font-semibold transition ${editing.billing_type === "lifetime" ? "bg-blood text-primary-foreground shadow-blood" : "bg-card text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Lifetime
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Default is monthly. Switch to lifetime only for one-time permanent plans.</p>
+                </div>
+              )}
               <div><Label>Image URL (recommended 800x600)</Label><Input value={editing.image_url || ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} placeholder="https://..." /></div>
               {editing.image_url && <img src={editing.image_url} alt="" className="h-32 w-full object-cover rounded-md border border-border" />}
               <div><Label>Short description</Label><Input value={editing.short_description || ""} onChange={(e) => setEditing({ ...editing, short_description: e.target.value })} /></div>
@@ -141,13 +183,13 @@ function ProductsAdmin() {
               <div><Label>Perks (one per line)</Label><Textarea rows={5} value={(editing.perks || []).join("\n")} onChange={(e) => setEditing({ ...editing, perks: e.target.value.split("\n").filter(Boolean) })} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Sort order</Label><Input type="number" value={editing.sort_order} onChange={(e) => setEditing({ ...editing, sort_order: e.target.value })} /></div>
-                {editing.is_topup && <div><Label>Top-up amount (₹)</Label><Input type="number" value={editing.topup_amount} onChange={(e) => setEditing({ ...editing, topup_amount: e.target.value })} /></div>}
+                {editing.is_topup && <div><Label>Top-up amount INR</Label><Input type="number" value={editing.topup_amount} onChange={(e) => setEditing({ ...editing, topup_amount: e.target.value })} /></div>}
               </div>
               <div className="flex flex-wrap gap-6">
                 <label className="flex items-center gap-2 text-sm"><Switch checked={editing.enabled} onCheckedChange={(v) => setEditing({ ...editing, enabled: v })} />Enabled</label>
                 <label className="flex items-center gap-2 text-sm"><Switch checked={editing.featured} onCheckedChange={(v) => setEditing({ ...editing, featured: v })} />Featured</label>
                 <label className="flex items-center gap-2 text-sm"><Switch checked={editing.popular} onCheckedChange={(v) => setEditing({ ...editing, popular: v })} />Popular</label>
-                <label className="flex items-center gap-2 text-sm"><Switch checked={!!editing.is_topup} onCheckedChange={(v) => setEditing({ ...editing, is_topup: v, category: v ? "topup" : editing.category })} />Wallet top-up pack</label>
+                <label className="flex items-center gap-2 text-sm"><Switch checked={!!editing.is_topup} onCheckedChange={(v) => setEditing({ ...editing, is_topup: v, category: v ? "topup" : editing.category, billing_type: v ? "lifetime" : editing.billing_type })} />Wallet top-up pack</label>
               </div>
               <Button className="w-full bg-blood" onClick={save}>Save</Button>
             </div>

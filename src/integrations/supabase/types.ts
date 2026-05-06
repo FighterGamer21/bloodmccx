@@ -184,6 +184,7 @@ export type Database = {
       }
       products: {
         Row: {
+          billing_type: string
           category: string
           color: string | null
           created_at: string
@@ -206,6 +207,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_type?: string
           category: string
           color?: string | null
           created_at?: string
@@ -228,6 +230,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_type?: string
           category?: string
           color?: string | null
           created_at?: string

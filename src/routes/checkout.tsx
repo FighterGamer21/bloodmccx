@@ -65,6 +65,7 @@ function CheckoutPage() {
     const order_ref = genRef();
     const orderItems = items.map((i) => ({
       id: i.id, name: i.name, slug: i.slug, category: i.category,
+      billing_type: i.billing_type || (i.is_topup ? "lifetime" : "monthly"),
       price: effectivePrice(i as any, currency),
     }));
     const { error } = await supabase.from("orders").insert({
@@ -170,7 +171,10 @@ function CheckoutPage() {
               <ul className="mt-4 space-y-3">
                 {items.map((it) => (
                   <li key={it.id} className="flex justify-between text-sm">
-                    <span><span className="text-muted-foreground uppercase text-[10px] mr-2">{it.category}</span>{it.name}</span>
+                    <span>
+                      <span className="text-muted-foreground uppercase text-[10px] mr-2">{it.category}</span>{it.name}
+                      {!it.is_topup && <span className="ml-2 text-xs text-muted-foreground">{it.billing_type === "lifetime" ? "Lifetime" : "Monthly"}</span>}
+                    </span>
                     <span>{symbol}{effectivePrice(it as any, currency).toFixed(currency === "INR" ? 0 : 2)}</span>
                   </li>
                 ))}

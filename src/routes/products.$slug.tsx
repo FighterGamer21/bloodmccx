@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { Button } from "@/components/ui/button";
-import { useCart, formatPrice } from "@/lib/cart";
+import { effectivePrice, formatPrice, useCart } from "@/lib/cart";
 import { Check, Plus, ChevronLeft, Crown, Tag as TagIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,8 @@ function ProductPage() {
   const inCart = items.some((i) => i.id === p.id);
   const Icon = p.category === "rank" ? Crown : TagIcon;
   const perks: string[] = Array.isArray(p.perks) ? (p.perks as string[]) : [];
+  const planLabel = p.billing_type === "lifetime" ? "Lifetime - one-time" : "Monthly plan";
+  const price = effectivePrice(p as any, currency);
   return (
     <SiteLayout>
       <section className="container mx-auto px-4 py-10">
@@ -37,7 +39,10 @@ function ProductPage() {
             {p.short_description && <p className="text-lg text-muted-foreground">{p.short_description}</p>}
             {p.description && <p className="mt-3 text-sm text-muted-foreground">{p.description}</p>}
             <div className="mt-6 flex items-end gap-4">
-              <p className="text-5xl font-bold text-blood">{formatPrice(currency === "INR" ? Number(p.price_inr) : Number(p.price_usd), currency)}</p>
+              <div>
+                <p className="text-5xl font-bold text-blood">{formatPrice(price, currency)}</p>
+                <p className="mt-1 text-sm font-semibold text-muted-foreground">{planLabel}</p>
+              </div>
               <div className="flex rounded-md border border-border overflow-hidden mb-1">
                 <Button size="sm" variant={currency === "INR" ? "default" : "ghost"} onClick={() => setCurrency("INR")} className="rounded-none">INR</Button>
                 <Button size="sm" variant={currency === "USD" ? "default" : "ghost"} onClick={() => setCurrency("USD")} className="rounded-none">USD</Button>

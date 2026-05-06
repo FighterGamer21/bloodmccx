@@ -35,6 +35,7 @@ function CartPage() {
                     <div className="flex-1">
                       <p className="text-xs uppercase tracking-widest text-muted-foreground">{it.category}</p>
                       <h3 className="font-bold">{it.name}</h3>
+                      {!it.is_topup && <p className="text-xs text-muted-foreground">{it.billing_type === "lifetime" ? "Lifetime - one-time" : "Monthly plan"}</p>}
                     </div>
                     <p className="font-bold">{formatPrice(currency === "INR" ? it.price_inr : it.price_usd, currency)}</p>
                     <Button variant="ghost" size="icon" onClick={() => remove(it.id)}><Trash2 className="h-4 w-4" /></Button>

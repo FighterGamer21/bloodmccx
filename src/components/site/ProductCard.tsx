@@ -1,16 +1,28 @@
 import { Link } from "@tanstack/react-router";
-import { Crown, Tag as TagIcon, Plus, Check, Wallet } from "lucide-react";
+import { Check, Crown, Plus, Tag as TagIcon, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart, formatPrice, effectivePrice, type CartItem } from "@/lib/cart";
+import { effectivePrice, formatPrice, type CartItem, useCart } from "@/lib/cart";
 import { toast } from "sonner";
 
-export function ProductCard({ p }: { p: CartItem & { short_description?: string | null; perks?: string[]; featured?: boolean; popular?: boolean; discount_percent?: number; image_url?: string | null; is_topup?: boolean } }) {
+type ProductCardItem = CartItem & {
+  short_description?: string | null;
+  perks?: string[];
+  featured?: boolean;
+  popular?: boolean;
+  discount_percent?: number;
+  image_url?: string | null;
+  is_topup?: boolean;
+  billing_type?: string | null;
+};
+
+export function ProductCard({ p }: { p: ProductCardItem }) {
   const { add, items, currency } = useCart();
   const inCart = items.some((i) => i.id === p.id);
   const Icon = p.is_topup ? Wallet : p.category === "rank" ? Crown : TagIcon;
   const discount = Number(p.discount_percent || 0);
   const base = currency === "INR" ? Number(p.price_inr) : Number(p.price_usd);
   const eff = effectivePrice(p as any, currency);
+  const planLabel = p.is_topup ? `Adds INR ${p.topup_amount} balance` : p.billing_type === "lifetime" ? "Lifetime - one-time" : "Monthly plan";
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card shadow-card transition-all hover:border-primary/50 hover:shadow-blood">
@@ -56,7 +68,7 @@ export function ProductCard({ p }: { p: CartItem & { short_description?: string 
               <p className="text-2xl font-bold">{formatPrice(eff, currency)}</p>
               {discount > 0 && <p className="text-sm text-muted-foreground line-through">{formatPrice(base, currency)}</p>}
             </div>
-            <p className="text-xs text-muted-foreground">{p.is_topup ? `Adds ₹${p.topup_amount} balance` : "Lifetime · One-time"}</p>
+            <p className="text-xs text-muted-foreground">{planLabel}</p>
           </div>
           {!p.is_topup && (
             <Link to="/products/$slug" params={{ slug: p.slug }}>

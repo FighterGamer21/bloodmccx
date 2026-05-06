@@ -12,6 +12,7 @@ export type CartItem = {
   image_url?: string | null;
   is_topup?: boolean;
   topup_amount?: number;
+  billing_type?: "lifetime" | "monthly" | string | null;
 };
 
 type Currency = "INR" | "USD";
