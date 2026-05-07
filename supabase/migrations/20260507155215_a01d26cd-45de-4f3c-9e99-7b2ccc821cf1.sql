@@ -1,3 +1,4 @@
+
 ALTER TABLE public.products
 ADD COLUMN IF NOT EXISTS billing_type TEXT NOT NULL DEFAULT 'monthly'
 CHECK (billing_type IN ('monthly', 'lifetime'));

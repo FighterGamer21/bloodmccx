@@ -16,14 +16,14 @@ export function MaintenanceGate({ children }: { children: ReactNode }) {
     (async () => {
       const settings = await loadSiteSettings();
       if (!alive) return;
-      setMaintenance(settings.maintenance_mode === true || settings.maintenance_mode === "true");
+      setMaintenance(Boolean(settings.maintenance_mode));
       setMsg(settings.maintenance_message);
       setSiteName(settings.site_name);
       setLoaded(true);
     })();
     const reload = async () => {
       const settings = await loadSiteSettings();
-      setMaintenance(settings.maintenance_mode === true || settings.maintenance_mode === "true");
+      setMaintenance(Boolean(settings.maintenance_mode));
       setMsg(settings.maintenance_message);
       setSiteName(settings.site_name);
     };
