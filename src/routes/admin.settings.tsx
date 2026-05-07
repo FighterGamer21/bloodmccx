@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { loadSiteSettings, notifySettingsUpdated, type SiteSettings } from "@/lib/site-settings";
+import { uploadAdminImage } from "@/lib/admin-image-upload";
 
 export const Route = createFileRoute("/admin/settings")({
   component: SettingsAdmin,
@@ -28,6 +29,8 @@ function SettingsAdmin() {
   const [values, setValues] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -63,6 +66,21 @@ function SettingsAdmin() {
 
   const set = (k: string, v: any) => setValues((current) => ({ ...current, [k]: v }));
 
+  const uploadSettingImage = async (key: "site_logo_url" | "hero_image_url", file?: File) => {
+    if (!file) return;
+    const isLogo = key === "site_logo_url";
+    if (isLogo) setUploadingLogo(true); else setUploadingHero(true);
+    try {
+      const url = await uploadAdminImage(file, isLogo ? "branding" : "hero");
+      set(key, url);
+      toast.success(isLogo ? "Logo uploaded" : "Hero image uploaded");
+    } catch (error: any) {
+      toast.error(error.message || "Image upload failed");
+    } finally {
+      if (isLogo) setUploadingLogo(false); else setUploadingHero(false);
+    }
+  };
+
   if (loading) return <div className="text-sm text-muted-foreground">Loading settings...</div>;
 
   return (
@@ -79,13 +97,17 @@ function SettingsAdmin() {
           <div><Label>Tagline</Label><Input value={values.tagline || ""} onChange={(e) => set("tagline", e.target.value)} /></div>
         </div>
         <div>
-          <Label>Server Logo URL</Label>
-          <Input value={values.site_logo_url || ""} onChange={(e) => set("site_logo_url", e.target.value)} placeholder="https://.../logo.png" />
+          <Label>Server Logo</Label>
+          <Input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => uploadSettingImage("site_logo_url", e.target.files?.[0])} disabled={uploadingLogo || saving} />
+          <p className="mt-1 text-xs text-muted-foreground">{uploadingLogo ? "Uploading..." : "Upload from your PC, or paste a URL below."}</p>
+          <Input className="mt-2" value={values.site_logo_url || ""} onChange={(e) => set("site_logo_url", e.target.value)} placeholder="https://.../logo.png" disabled={uploadingLogo || saving} />
           {values.site_logo_url && <img src={values.site_logo_url} alt="logo" className="mt-2 h-16 w-16 rounded-md border border-border object-cover" />}
         </div>
         <div>
-          <Label>Homepage Hero Image URL</Label>
-          <Input value={values.hero_image_url || ""} onChange={(e) => set("hero_image_url", e.target.value)} placeholder="https://.../hero-background.png" />
+          <Label>Homepage Hero Image</Label>
+          <Input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => uploadSettingImage("hero_image_url", e.target.files?.[0])} disabled={uploadingHero || saving} />
+          <p className="mt-1 text-xs text-muted-foreground">{uploadingHero ? "Uploading..." : "Upload from your PC, or paste a URL below."}</p>
+          <Input className="mt-2" value={values.hero_image_url || ""} onChange={(e) => set("hero_image_url", e.target.value)} placeholder="https://.../hero-background.png" disabled={uploadingHero || saving} />
           <p className="mt-1 text-xs text-muted-foreground">Optional image shown behind the homepage hero. Leave empty to use the default animated grid.</p>
           {values.hero_image_url && <img src={values.hero_image_url} alt="hero preview" className="mt-2 h-28 w-full rounded-md border border-border object-cover" />}
         </div>
@@ -129,8 +151,8 @@ function SettingsAdmin() {
         </div>
       </div>
 
-      <Button type="submit" className="bg-blood shadow-blood w-full sm:w-auto" disabled={saving}>
-        {saving ? "Saving..." : "Save All Settings"}
+      <Button type="submit" className="bg-blood shadow-blood w-full sm:w-auto" disabled={saving || uploadingLogo || uploadingHero}>
+        {saving ? "Saving..." : uploadingLogo || uploadingHero ? "Uploading..." : "Save All Settings"}
       </Button>
     </form>
   );

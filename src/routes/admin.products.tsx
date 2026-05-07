@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { isBillingTypeSchemaCacheError, uploadAdminImage } from "@/lib/admin-image-upload";
 
 export const Route = createFileRoute("/admin/products")({
   component: ProductsAdmin,
@@ -41,6 +42,8 @@ function ProductsAdmin() {
   const [products, setProducts] = useState<any[]>([]);
   const [editing, setEditing] = useState<any | null>(null);
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("products").select("*").order("category").order("sort_order");
@@ -64,6 +67,7 @@ function ProductsAdmin() {
 
   const save = async () => {
     if (!editing.name || !editing.slug) return toast.error("Name & slug required");
+    setSaving(true);
     const { id, created_at, updated_at, ...rest } = editing;
     const payload = {
       ...rest,
@@ -74,11 +78,38 @@ function ProductsAdmin() {
       sort_order: Number(rest.sort_order) || 0,
       topup_amount: Number(rest.topup_amount) || 0,
     };
-    const res = id
+    let res = id
       ? await supabase.from("products").update(payload).eq("id", id)
       : await supabase.from("products").insert(payload);
+    if (res.error && isBillingTypeSchemaCacheError(res.error.message)) {
+      const { billing_type, ...fallbackPayload } = payload;
+      res = id
+        ? await supabase.from("products").update(fallbackPayload).eq("id", id)
+        : await supabase.from("products").insert(fallbackPayload);
+      setSaving(false);
+      if (res.error) return toast.error(res.error.message);
+      toast.warning("Saved, but plan type was not saved. Apply the latest Supabase migrations and redeploy so the billing_type column is available.");
+      setOpen(false);
+      load();
+      return;
+    }
+    setSaving(false);
     if (res.error) toast.error(res.error.message);
     else { toast.success("Saved"); setOpen(false); load(); }
+  };
+
+  const uploadProductImage = async (file?: File) => {
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const url = await uploadAdminImage(file, "products");
+      setEditing((current: any) => ({ ...current, image_url: url }));
+      toast.success("Product image uploaded");
+    } catch (error: any) {
+      toast.error(error.message || "Image upload failed");
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const del = async (id: string) => {
@@ -176,7 +207,13 @@ function ProductsAdmin() {
                   <p className="mt-1 text-xs text-muted-foreground">Default is monthly. Switch to lifetime only for one-time permanent plans.</p>
                 </div>
               )}
-              <div><Label>Image URL (recommended 800x600)</Label><Input value={editing.image_url || ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} placeholder="https://..." /></div>
+              <div className="space-y-2">
+                <Label>Product Image</Label>
+                <Input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(e) => uploadProductImage(e.target.files?.[0])} disabled={uploadingImage || saving} />
+                <p className="text-xs text-muted-foreground">{uploadingImage ? "Uploading..." : "Upload PNG, JPG, WEBP, or GIF up to 5 MB."}</p>
+                <Label className="text-xs text-muted-foreground">Image URL fallback</Label>
+                <Input value={editing.image_url || ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} placeholder="https://..." disabled={uploadingImage || saving} />
+              </div>
               {editing.image_url && <img src={editing.image_url} alt="" className="h-32 w-full object-cover rounded-md border border-border" />}
               <div><Label>Short description</Label><Input value={editing.short_description || ""} onChange={(e) => setEditing({ ...editing, short_description: e.target.value })} /></div>
               <div><Label>Description</Label><Textarea rows={3} value={editing.description || ""} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></div>
@@ -191,7 +228,9 @@ function ProductsAdmin() {
                 <label className="flex items-center gap-2 text-sm"><Switch checked={editing.popular} onCheckedChange={(v) => setEditing({ ...editing, popular: v })} />Popular</label>
                 <label className="flex items-center gap-2 text-sm"><Switch checked={!!editing.is_topup} onCheckedChange={(v) => setEditing({ ...editing, is_topup: v, category: v ? "topup" : editing.category, billing_type: v ? "lifetime" : editing.billing_type })} />Wallet top-up pack</label>
               </div>
-              <Button className="w-full bg-blood" onClick={save}>Save</Button>
+              <Button className="w-full bg-blood" onClick={save} disabled={saving || uploadingImage}>
+                {saving ? "Saving..." : uploadingImage ? "Uploading..." : "Save"}
+              </Button>
             </div>
           )}
         </DialogContent>
